@@ -1,6 +1,6 @@
 /*!
- * ApexCharts v3.36.2
- * (c) 2018-2022 ApexCharts
+ * ApexCharts v3.36.3
+ * (c) 2018-2023 ApexCharts
  * Released under the MIT License.
  */
 (function (global, factory) {
@@ -5864,19 +5864,6 @@
         var options = new Options();
         var defaults = new Defaults(opts);
         this.chartType = opts.chart.type;
-
-        if (this.chartType === 'histogram') {
-          // technically, a histogram can be drawn by a column chart with no spaces in between
-          opts.chart.type = 'bar';
-          opts = Utils$1.extend({
-            plotOptions: {
-              bar: {
-                columnWidth: '99.99%'
-              }
-            }
-          }, opts);
-        }
-
         opts = this.extendYAxis(opts);
         opts = this.extendAnnotations(opts);
         var config = options.init();
@@ -5884,7 +5871,7 @@
 
         if (opts && _typeof(opts) === 'object') {
           var chartDefaults = {};
-          var chartTypes = ['line', 'area', 'bar', 'candlestick', 'boxPlot', 'rangeBar', 'rangeArea', 'histogram', 'bubble', 'scatter', 'heatmap', 'treemap', 'pie', 'polarArea', 'donut', 'radar', 'radialBar'];
+          var chartTypes = ['line', 'area', 'bar', 'candlestick', 'boxPlot', 'rangeBar', 'rangeArea', 'bubble', 'scatter', 'heatmap', 'treemap', 'pie', 'polarArea', 'donut', 'radar', 'radialBar'];
 
           if (chartTypes.indexOf(opts.chart.type) !== -1) {
             chartDefaults = defaults[opts.chart.type]();
@@ -9498,7 +9485,7 @@
           });
           var elXAxisTitleText = graphics.drawText({
             x: w.globals.gridWidth / 2 + w.config.xaxis.title.offsetX,
-            y: this.offY + parseFloat(this.xaxisFontSize) + (w.config.xaxis.title.position === 'bottom' ? w.globals.xAxisLabelsHeight : -w.globals.xAxisLabelsHeight - 10) + w.config.xaxis.title.offsetY,
+            y: this.offY + parseFloat(this.xaxisFontSize) + (w.config.xaxis.position === 'bottom' ? w.globals.xAxisLabelsHeight : -w.globals.xAxisLabelsHeight - 10) + w.config.xaxis.title.offsetY,
             text: w.config.xaxis.title.text,
             textAnchor: 'middle',
             fontSize: w.config.xaxis.title.style.fontSize,
@@ -9700,11 +9687,28 @@
               multiY = label.length / 2 * parseInt(ylabels.style.fontSize, 10);
             }
 
+            var offsetX = ylabels.offsetX - 15;
+            var textAnchor = 'end';
+
+            if (_this2.yaxis.opposite) {
+              textAnchor = 'start';
+            }
+
+            if (w.config.yaxis[0].labels.align === 'left') {
+              offsetX = ylabels.offsetX;
+              textAnchor = 'start';
+            } else if (w.config.yaxis[0].labels.align === 'center') {
+              offsetX = ylabels.offsetX;
+              textAnchor = 'middle';
+            } else if (w.config.yaxis[0].labels.align === 'right') {
+              textAnchor = 'end';
+            }
+
             var elLabel = graphics.drawText({
-              x: ylabels.offsetX - 15,
+              x: offsetX,
               y: yPos + colHeight + ylabels.offsetY - multiY,
               text: label,
-              textAnchor: _this2.yaxis.opposite ? 'start' : 'end',
+              textAnchor: textAnchor,
               foreColor: getForeColor(),
               fontSize: ylabels.style.fontSize,
               fontFamily: ylabels.style.fontFamily,
@@ -11616,6 +11620,20 @@
               xPad = xPad * -1;
             }
 
+            var textAnchor = 'end';
+
+            if (w.config.yaxis[realIndex].opposite) {
+              textAnchor = 'start';
+            }
+
+            if (w.config.yaxis[realIndex].labels.align === 'left') {
+              textAnchor = 'start';
+            } else if (w.config.yaxis[realIndex].labels.align === 'center') {
+              textAnchor = 'middle';
+            } else if (w.config.yaxis[realIndex].labels.align === 'right') {
+              textAnchor = 'end';
+            }
+
             var yColors = _this.axesUtils.getYAxisForeColor(yaxisStyle.colors, realIndex);
 
             var getForeColor = function getForeColor() {
@@ -11626,7 +11644,7 @@
               x: xPad,
               y: l + tickAmount / 10 + w.config.yaxis[realIndex].labels.offsetY + 1,
               text: val,
-              textAnchor: w.config.yaxis[realIndex].opposite ? 'start' : 'end',
+              textAnchor: textAnchor,
               fontSize: yaxisFontSize,
               fontFamily: yaxisFontFamily,
               fontWeight: yaxisFontWeight,
@@ -11950,7 +11968,7 @@
         yaxis.forEach(function (y, index) {
           var yaxe = w.config.yaxis[index]; // proceed only if user has specified alignment
 
-          if (yaxe && yaxe.labels.align !== undefined) {
+          if (yaxe && !yaxe.floating && yaxe.labels.align !== undefined) {
             var yAxisInner = w.globals.dom.baseEl.querySelector(".apexcharts-yaxis[rel='".concat(index, "'] .apexcharts-yaxis-texts-g"));
             var yAxisTexts = w.globals.dom.baseEl.querySelectorAll(".apexcharts-yaxis[rel='".concat(index, "'] .apexcharts-yaxis-label"));
             yAxisTexts = Utils$1.listToArray(yAxisTexts);
@@ -24922,7 +24940,7 @@
 
           var year = this._getYear(currentYear, month, yrCounter);
 
-          pos = hour === 0 && i === 0 ? remainingMins * minutesWidthOnXAxis : 60 * minutesWidthOnXAxis + pos;
+          pos = 60 * minutesWidthOnXAxis + pos;
           var val = hour === 0 ? date : hour;
           this.timeScaleArray.push({
             position: pos,
@@ -29502,332 +29520,321 @@
   /*! svg.filter.js - v2.0.2 - 2016-02-24
   * https://github.com/wout/svg.filter.js
   * Copyright (c) 2016 Wout Fierens; Licensed MIT */
-  (function() {
-
+  (function () {
     // Main filter class
-    SVG.Filter = SVG.invent({
+    window.SVG.Filter = window.SVG.invent({
       create: 'filter',
-      inherit: SVG.Parent,
+      inherit: window.SVG.Parent,
       extend: {
         // Static strings
-        source:           'SourceGraphic',
-        sourceAlpha:      'SourceAlpha',
-        background:       'BackgroundImage',
-        backgroundAlpha:  'BackgroundAlpha',
-        fill:             'FillPaint',
-        stroke:           'StrokePaint',
-
+        source: 'SourceGraphic',
+        sourceAlpha: 'SourceAlpha',
+        background: 'BackgroundImage',
+        backgroundAlpha: 'BackgroundAlpha',
+        fill: 'FillPaint',
+        stroke: 'StrokePaint',
         autoSetIn: true,
         // Custom put method for leaner code
-        put: function(element, i) {
+        put: function put(element, i) {
           this.add(element, i);
 
-          if(!element.attr('in') && this.autoSetIn){
-            element.attr('in',this.source);
-          }
-          if(!element.attr('result')){
-            element.attr('result',element);
+          if (!element.attr('in') && this.autoSetIn) {
+            element.attr('in', this.source);
           }
 
-          return element
+          if (!element.attr('result')) {
+            element.attr('result', element);
+          }
+
+          return element;
         },
         // Blend effect
-        blend: function(in1, in2, mode) {
-          return this.put(new SVG.BlendEffect(in1, in2, mode))
+        blend: function blend(in1, in2, mode) {
+          return this.put(new window.SVG.BlendEffect(in1, in2, mode));
         },
         // ColorMatrix effect
-        colorMatrix: function(type, values) {
-          return this.put(new SVG.ColorMatrixEffect(type, values))
+        colorMatrix: function colorMatrix(type, values) {
+          return this.put(new window.SVG.ColorMatrixEffect(type, values));
         },
         // ConvolveMatrix effect
-        convolveMatrix: function(matrix) {
-          return this.put(new SVG.ConvolveMatrixEffect(matrix))
+        convolveMatrix: function convolveMatrix(matrix) {
+          return this.put(new window.SVG.ConvolveMatrixEffect(matrix));
         },
         // ComponentTransfer effect
-        componentTransfer: function(components) {
-          return this.put(new SVG.ComponentTransferEffect(components))
+        componentTransfer: function componentTransfer(components) {
+          return this.put(new window.SVG.ComponentTransferEffect(components));
         },
         // Composite effect
-        composite: function(in1, in2, operator) {
-          return this.put(new SVG.CompositeEffect(in1, in2, operator))
+        composite: function composite(in1, in2, operator) {
+          return this.put(new window.SVG.CompositeEffect(in1, in2, operator));
         },
         // Flood effect
-        flood: function(color, opacity) {
-          return this.put(new SVG.FloodEffect(color, opacity))
+        flood: function flood(color, opacity) {
+          return this.put(new window.SVG.FloodEffect(color, opacity));
         },
         // Offset effect
-        offset: function(x, y) {
-          return this.put(new SVG.OffsetEffect(x,y))
+        offset: function offset(x, y) {
+          return this.put(new window.SVG.OffsetEffect(x, y));
         },
         // Image effect
-        image: function(src) {
-          return this.put(new SVG.ImageEffect(src))
+        image: function image(src) {
+          return this.put(new window.SVG.ImageEffect(src));
         },
         // Merge effect
-        merge: function() {
+        merge: function merge() {
           //pass the array of arguments to the constructor because we dont know if the user gave us an array as the first arguemnt or wether they listed the effects in the arguments
           var args = [undefined];
-          for(var i in arguments) args.push(arguments[i]);
-          return this.put(new (SVG.MergeEffect.bind.apply(SVG.MergeEffect,args)))
+
+          for (var i in arguments) {
+            args.push(arguments[i]);
+          }
+
+          return this.put(new (window.SVG.MergeEffect.bind.apply(window.SVG.MergeEffect, args))());
         },
         // Gaussian Blur effect
-        gaussianBlur: function(x,y) {
-          return this.put(new SVG.GaussianBlurEffect(x,y))
+        gaussianBlur: function gaussianBlur(x, y) {
+          return this.put(new window.SVG.GaussianBlurEffect(x, y));
         },
         // Morphology effect
-        morphology: function(operator,radius){
-          return this.put(new SVG.MorphologyEffect(operator,radius))
+        morphology: function morphology(operator, radius) {
+          return this.put(new window.SVG.MorphologyEffect(operator, radius));
         },
         // DiffuseLighting effect
-        diffuseLighting: function(surfaceScale,diffuseConstant,kernelUnitLength){
-          return this.put(new SVG.DiffuseLightingEffect(surfaceScale,diffuseConstant,kernelUnitLength))
+        diffuseLighting: function diffuseLighting(surfaceScale, diffuseConstant, kernelUnitLength) {
+          return this.put(new window.SVG.DiffuseLightingEffect(surfaceScale, diffuseConstant, kernelUnitLength));
         },
         // DisplacementMap effect
-        displacementMap: function(in1,in2,scale,xChannelSelector,yChannelSelector){
-          return this.put(new SVG.DisplacementMapEffect(in1,in2,scale,xChannelSelector,yChannelSelector))
+        displacementMap: function displacementMap(in1, in2, scale, xChannelSelector, yChannelSelector) {
+          return this.put(new window.SVG.DisplacementMapEffect(in1, in2, scale, xChannelSelector, yChannelSelector));
         },
         // SpecularLighting effect
-        specularLighting: function(surfaceScale,diffuseConstant,specularExponent,kernelUnitLength){
-          return this.put(new SVG.SpecularLightingEffect(surfaceScale,diffuseConstant,specularExponent,kernelUnitLength))
+        specularLighting: function specularLighting(surfaceScale, diffuseConstant, specularExponent, kernelUnitLength) {
+          return this.put(new window.SVG.SpecularLightingEffect(surfaceScale, diffuseConstant, specularExponent, kernelUnitLength));
         },
         // Tile effect
-        tile: function(){
-          return this.put(new SVG.TileEffect());
+        tile: function tile() {
+          return this.put(new window.SVG.TileEffect());
         },
         // Turbulence effect
-        turbulence: function(baseFrequency,numOctaves,seed,stitchTiles,type){
-          return this.put(new SVG.TurbulenceEffect(baseFrequency,numOctaves,seed,stitchTiles,type))
+        turbulence: function turbulence(baseFrequency, numOctaves, seed, stitchTiles, type) {
+          return this.put(new window.SVG.TurbulenceEffect(baseFrequency, numOctaves, seed, stitchTiles, type));
         },
         // Default string value
-        toString: function() {
-          return 'url(#' + this.attr('id') + ')'
+        toString: function toString() {
+          return 'url(#' + this.attr('id') + ')';
         }
       }
-    });
+    }); //add .filter function
 
-    //add .filter function
-    SVG.extend(SVG.Defs, {
+    window.SVG.extend(window.SVG.Defs, {
       // Define filter
-      filter: function(block) {
-        var filter = this.put(new SVG.Filter);
-
+      filter: function filter(block) {
+        var filter = this.put(new window.SVG.Filter());
         /* invoke passed block */
-        if (typeof block === 'function')
-          block.call(filter, filter);
 
-        return filter
+        if (typeof block === 'function') block.call(filter, filter);
+        return filter;
       }
     });
-    SVG.extend(SVG.Container, {
+    window.SVG.extend(window.SVG.Container, {
       // Define filter on defs
-      filter: function(block) {
-        return this.defs().filter(block)
+      filter: function filter(block) {
+        return this.defs().filter(block);
       }
     });
-    SVG.extend(SVG.Element, SVG.G, SVG.Nested, {
+    window.SVG.extend(window.SVG.Element, window.SVG.G, window.SVG.Nested, {
       // Create filter element in defs and store reference
-      filter: function(block) {
-        this.filterer = block instanceof SVG.Element ?
-          block : this.doc().filter(block);
+      filter: function filter(block) {
+        this.filterer = block instanceof window.SVG.Element ? block : this.doc().filter(block);
 
-        if(this.doc() && this.filterer.doc() !== this.doc()){
+        if (this.doc() && this.filterer.doc() !== this.doc()) {
           this.doc().defs().add(this.filterer);
         }
 
         this.attr('filter', this.filterer);
-
-        return this.filterer
+        return this.filterer;
       },
       // Remove filter
-      unfilter: function(remove) {
+      unfilter: function unfilter(remove) {
         /* also remove the filter node */
-        if (this.filterer && remove === true)
-          this.filterer.remove();
-
+        if (this.filterer && remove === true) this.filterer.remove();
         /* delete reference to filterer */
+
         delete this.filterer;
-
         /* remove filter attribute */
-        return this.attr('filter', null)
-      }
-    });
 
-    // Create SVG.Effect class
-    SVG.Effect = SVG.invent({
-      create: function(){
+        return this.attr('filter', null);
+      }
+    }); // Create SVG.Effect class
+
+    window.SVG.Effect = window.SVG.invent({
+      create: function create() {
         this.constructor.call(this);
       },
-      inherit: SVG.Element,
+      inherit: window.SVG.Element,
       extend: {
         // Set in attribute
-        in: function(effect) {
-          return effect == null? this.parent() && this.parent().select('[result="'+this.attr('in')+'"]').get(0) || this.attr('in') : this.attr('in', effect)
+        in: function _in(effect) {
+          return effect == null ? this.parent() && this.parent().select('[result="' + this.attr('in') + '"]').get(0) || this.attr('in') : this.attr('in', effect);
         },
         // Named result
-        result: function(result) {
-          return result == null? this.attr('result') : this.attr('result',result)
+        result: function result(_result) {
+          return _result == null ? this.attr('result') : this.attr('result', _result);
         },
         // Stringification
-        toString: function() {
-          return this.result()
+        toString: function toString() {
+          return this.result();
         }
       }
-    });
-
-    // create class for parent effects like merge
+    }); // create class for parent effects like merge
     // Inherit from SVG.Parent
-    SVG.ParentEffect = SVG.invent({
-      create: function(){
+
+    window.SVG.ParentEffect = window.SVG.invent({
+      create: function create() {
         this.constructor.call(this);
       },
-      inherit: SVG.Parent,
+      inherit: window.SVG.Parent,
       extend: {
         // Set in attribute
-        in: function(effect) {
-          return effect == null? this.parent() && this.parent().select('[result="'+this.attr('in')+'"]').get(0) || this.attr('in') : this.attr('in', effect)
+        in: function _in(effect) {
+          return effect == null ? this.parent() && this.parent().select('[result="' + this.attr('in') + '"]').get(0) || this.attr('in') : this.attr('in', effect);
         },
         // Named result
-        result: function(result) {
-          return result == null? this.attr('result') : this.attr('result',result)
+        result: function result(_result2) {
+          return _result2 == null ? this.attr('result') : this.attr('result', _result2);
         },
         // Stringification
-        toString: function() {
-          return this.result()
+        toString: function toString() {
+          return this.result();
         }
       }
-    });
+    }); //chaining
 
-    //chaining
     var chainingEffects = {
       // Blend effect
-      blend: function(in2, mode) {
-        return this.parent() && this.parent().blend(this, in2, mode) //pass this as the first input
+      blend: function blend(in2, mode) {
+        return this.parent() && this.parent().blend(this, in2, mode); //pass this as the first input
       },
       // ColorMatrix effect
-      colorMatrix: function(type, values) {
-        return this.parent() && this.parent().colorMatrix(type, values).in(this)
+      colorMatrix: function colorMatrix(type, values) {
+        return this.parent() && this.parent().colorMatrix(type, values).in(this);
       },
       // ConvolveMatrix effect
-      convolveMatrix: function(matrix) {
-        return this.parent() && this.parent().convolveMatrix(matrix).in(this)
+      convolveMatrix: function convolveMatrix(matrix) {
+        return this.parent() && this.parent().convolveMatrix(matrix).in(this);
       },
       // ComponentTransfer effect
-      componentTransfer: function(components) {
-        return this.parent() && this.parent().componentTransfer(components).in(this)
+      componentTransfer: function componentTransfer(components) {
+        return this.parent() && this.parent().componentTransfer(components).in(this);
       },
       // Composite effect
-      composite: function(in2, operator) {
-        return this.parent() && this.parent().composite(this, in2, operator) //pass this as the first input
+      composite: function composite(in2, operator) {
+        return this.parent() && this.parent().composite(this, in2, operator); //pass this as the first input
       },
       // Flood effect
-      flood: function(color, opacity) {
-        return this.parent() && this.parent().flood(color, opacity) //this effect dont have inputs
+      flood: function flood(color, opacity) {
+        return this.parent() && this.parent().flood(color, opacity); //this effect dont have inputs
       },
       // Offset effect
-      offset: function(x, y) {
-        return this.parent() && this.parent().offset(x,y).in(this)
+      offset: function offset(x, y) {
+        return this.parent() && this.parent().offset(x, y).in(this);
       },
       // Image effect
-      image: function(src) {
-        return this.parent() && this.parent().image(src) //this effect dont have inputs
+      image: function image(src) {
+        return this.parent() && this.parent().image(src); //this effect dont have inputs
       },
       // Merge effect
-      merge: function() {
-        return this.parent() && this.parent().merge.apply(this.parent(),[this].concat(arguments)) //pass this as the first argument
+      merge: function merge() {
+        return this.parent() && this.parent().merge.apply(this.parent(), [this].concat(arguments)); //pass this as the first argument
       },
       // Gaussian Blur effect
-      gaussianBlur: function(x,y) {
-        return this.parent() && this.parent().gaussianBlur(x,y).in(this)
+      gaussianBlur: function gaussianBlur(x, y) {
+        return this.parent() && this.parent().gaussianBlur(x, y).in(this);
       },
       // Morphology effect
-      morphology: function(operator,radius){
-        return this.parent() && this.parent().morphology(operator,radius).in(this)
+      morphology: function morphology(operator, radius) {
+        return this.parent() && this.parent().morphology(operator, radius).in(this);
       },
       // DiffuseLighting effect
-      diffuseLighting: function(surfaceScale,diffuseConstant,kernelUnitLength){
-        return this.parent() && this.parent().diffuseLighting(surfaceScale,diffuseConstant,kernelUnitLength).in(this)
+      diffuseLighting: function diffuseLighting(surfaceScale, diffuseConstant, kernelUnitLength) {
+        return this.parent() && this.parent().diffuseLighting(surfaceScale, diffuseConstant, kernelUnitLength).in(this);
       },
       // DisplacementMap effect
-      displacementMap: function(in2,scale,xChannelSelector,yChannelSelector){
-        return this.parent() && this.parent().displacementMap(this,in2,scale,xChannelSelector,yChannelSelector) //pass this as the first input
+      displacementMap: function displacementMap(in2, scale, xChannelSelector, yChannelSelector) {
+        return this.parent() && this.parent().displacementMap(this, in2, scale, xChannelSelector, yChannelSelector); //pass this as the first input
       },
       // SpecularLighting effect
-      specularLighting: function(surfaceScale,diffuseConstant,specularExponent,kernelUnitLength){
-        return this.parent() && this.parent().specularLighting(surfaceScale,diffuseConstant,specularExponent,kernelUnitLength).in(this)
+      specularLighting: function specularLighting(surfaceScale, diffuseConstant, specularExponent, kernelUnitLength) {
+        return this.parent() && this.parent().specularLighting(surfaceScale, diffuseConstant, specularExponent, kernelUnitLength).in(this);
       },
       // Tile effect
-      tile: function(){
-        return this.parent() && this.parent().tile().in(this)
+      tile: function tile() {
+        return this.parent() && this.parent().tile().in(this);
       },
       // Turbulence effect
-      turbulence: function(baseFrequency,numOctaves,seed,stitchTiles,type){
-        return this.parent() && this.parent().turbulence(baseFrequency,numOctaves,seed,stitchTiles,type).in(this)
+      turbulence: function turbulence(baseFrequency, numOctaves, seed, stitchTiles, type) {
+        return this.parent() && this.parent().turbulence(baseFrequency, numOctaves, seed, stitchTiles, type).in(this);
       }
     };
-    SVG.extend(SVG.Effect,chainingEffects);
-    SVG.extend(SVG.ParentEffect,chainingEffects);
+    window.SVG.extend(window.SVG.Effect, chainingEffects);
+    window.SVG.extend(window.SVG.ParentEffect, chainingEffects); //crea class for child effects, like MergeNode, FuncR and lights
 
-    //crea class for child effects, like MergeNode, FuncR and lights
-    SVG.ChildEffect = SVG.invent({
-      create: function(){
+    window.SVG.ChildEffect = window.SVG.invent({
+      create: function create() {
         this.constructor.call(this);
       },
-      inherit: SVG.Element,
+      inherit: window.SVG.Element,
       extend: {
-      in: function(effect){
-        this.attr('in',effect);
-      }
-      //dont include any "result" functions because these types of nodes dont have them
-      }
-    });
+        in: function _in(effect) {
+          this.attr('in', effect);
+        } //dont include any "result" functions because these types of nodes dont have them
 
-    // Create all different effects
+      }
+    }); // Create all different effects
+
     var effects = {
-      blend: function(in1,in2,mode){
+      blend: function blend(in1, in2, mode) {
         this.attr({
           in: in1,
           in2: in2,
           mode: mode || 'normal'
         });
       },
-      colorMatrix: function(type,values){
-        if (type == 'matrix')
-          values = normaliseMatrix(values);
-
+      colorMatrix: function colorMatrix(type, values) {
+        if (type == 'matrix') values = normaliseMatrix(values);
         this.attr({
-          type:   type
-        , values: typeof values == 'undefined' ? null : values
+          type: type,
+          values: typeof values == 'undefined' ? null : values
         });
       },
-      convolveMatrix: function(matrix){
+      convolveMatrix: function convolveMatrix(matrix) {
         matrix = normaliseMatrix(matrix);
-
         this.attr({
-          order:        Math.sqrt(matrix.split(' ').length)
-        , kernelMatrix: matrix
+          order: Math.sqrt(matrix.split(' ').length),
+          kernelMatrix: matrix
         });
       },
-      composite: function(in1, in2, operator){
+      composite: function composite(in1, in2, operator) {
         this.attr({
           in: in1,
           in2: in2,
           operator: operator
         });
       },
-      flood: function(color,opacity){
-        this.attr('flood-color',color);
-        if(opacity != null) this.attr('flood-opacity',opacity);
+      flood: function flood(color, opacity) {
+        this.attr('flood-color', color);
+        if (opacity != null) this.attr('flood-opacity', opacity);
       },
-      offset: function(x,y){
+      offset: function offset(x, y) {
         this.attr({
           dx: x,
           dy: y
         });
       },
-      image: function(src){
-        this.attr('href', src, SVG.xlink);
+      image: function image(src) {
+        this.attr('href', src, window.SVG.xlink);
       },
-      displacementMap: function(in1,in2,scale,xChannelSelector,yChannelSelector){
+      displacementMap: function displacementMap(in1, in2, scale, xChannelSelector, yChannelSelector) {
         this.attr({
           in: in1,
           in2: in2,
@@ -29836,22 +29843,17 @@
           yChannelSelector: yChannelSelector
         });
       },
-      gaussianBlur: function(x,y){
-        if(x != null || y != null)
-          this.attr('stdDeviation', listString(Array.prototype.slice.call(arguments)));
-        else
-          this.attr('stdDeviation', '0 0');
+      gaussianBlur: function gaussianBlur(x, y) {
+        if (x != null || y != null) this.attr('stdDeviation', listString(Array.prototype.slice.call(arguments)));else this.attr('stdDeviation', '0 0');
       },
-      morphology: function(operator,radius){
+      morphology: function morphology(operator, radius) {
         this.attr({
           operator: operator,
           radius: radius
         });
       },
-      tile: function(){
-
-      },
-      turbulence: function(baseFrequency,numOctaves,seed,stitchTiles,type){
+      tile: function tile() {},
+      turbulence: function turbulence(baseFrequency, numOctaves, seed, stitchTiles, type) {
         this.attr({
           numOctaves: numOctaves,
           seed: seed,
@@ -29860,102 +29862,93 @@
           type: type
         });
       }
-    };
+    }; // Create all parent effects
 
-    // Create all parent effects
     var parentEffects = {
-      merge: function(){
-        var children;
+      merge: function merge() {
+        var children; //test to see if we have a set
 
-        //test to see if we have a set
-        if(arguments[0] instanceof SVG.Set){
+        if (arguments[0] instanceof window.SVG.Set) {
           var that = this;
-          arguments[0].each(function(i){
-            if(this instanceof SVG.MergeNode)
-              that.put(this);
-            else if(this instanceof SVG.Effect || this instanceof SVG.ParentEffect)
-              that.put(new SVG.MergeNode(this));
+          arguments[0].each(function (i) {
+            if (this instanceof window.SVG.MergeNode) that.put(this);else if (this instanceof window.SVG.Effect || this instanceof window.SVG.ParentEffect) that.put(new window.SVG.MergeNode(this));
           });
-        }
-        else {
+        } else {
           //if the first argument is an array use it
-          if(Array.isArray(arguments[0]))
-            children = arguments[0];
-          else
-            children = arguments;
+          if (Array.isArray(arguments[0])) children = arguments[0];else children = arguments;
 
-          for(var i = 0; i < children.length; i++){
-            if(children[i] instanceof SVG.MergeNode){
+          for (var i = 0; i < children.length; i++) {
+            if (children[i] instanceof window.SVG.MergeNode) {
               this.put(children[i]);
-            }
-            else this.put(new SVG.MergeNode(children[i]));
+            } else this.put(new window.SVG.MergeNode(children[i]));
           }
         }
       },
-      componentTransfer: function(compontents){
+      componentTransfer: function componentTransfer(compontents) {
         /* create rgb set */
-        this.rgb = new SVG.Set
-
+        this.rgb = new window.SVG.Set()
         /* create components */
-        ;(['r', 'g', 'b', 'a']).forEach(function(c) {
+        ;
+        ['r', 'g', 'b', 'a'].forEach(function (c) {
           /* create component */
-          this[c] = new SVG['Func' + c.toUpperCase()]('identity');
-
+          this[c] = new window.SVG['Func' + c.toUpperCase()]('identity');
           /* store component in set */
-          this.rgb.add(this[c]);
 
+          this.rgb.add(this[c]);
           /* add component node */
+
           this.node.appendChild(this[c].node);
         }.bind(this)); //lost context in foreach
 
         /* set components */
+
         if (compontents) {
           if (compontents.rgb) {
-  (['r', 'g', 'b']).forEach(function(c) {
+            ['r', 'g', 'b'].forEach(function (c) {
               this[c].attr(compontents.rgb);
             }.bind(this));
-
             delete compontents.rgb;
           }
-
           /* set individual components */
-          for (var c in compontents)
+
+
+          for (var c in compontents) {
             this[c].attr(compontents[c]);
+          }
         }
       },
-      diffuseLighting: function(surfaceScale,diffuseConstant,kernelUnitLength){
+      diffuseLighting: function diffuseLighting(surfaceScale, diffuseConstant, kernelUnitLength) {
         this.attr({
           surfaceScale: surfaceScale,
           diffuseConstant: diffuseConstant,
           kernelUnitLength: kernelUnitLength
         });
       },
-      specularLighting: function(surfaceScale,diffuseConstant,specularExponent,kernelUnitLength){
+      specularLighting: function specularLighting(surfaceScale, diffuseConstant, specularExponent, kernelUnitLength) {
         this.attr({
           surfaceScale: surfaceScale,
           diffuseConstant: diffuseConstant,
           specularExponent: specularExponent,
           kernelUnitLength: kernelUnitLength
         });
-      },
-    };
+      }
+    }; // Create child effects like PointLight and MergeNode
 
-    // Create child effects like PointLight and MergeNode
     var childEffects = {
-      distantLight: function(azimuth, elevation){
+      distantLight: function distantLight(azimuth, elevation) {
         this.attr({
           azimuth: azimuth,
           elevation: elevation
         });
       },
-      pointLight: function(x,y,z){
+      pointLight: function pointLight(x, y, z) {
         this.attr({
           x: x,
           y: y,
           z: z
         });
       },
-      spotLight: function(x,y,z,pointsAtX,pointsAtY,pointsAtZ){
+      spotLight: function spotLight(x, y, z, pointsAtX, pointsAtY, pointsAtZ) {
         this.attr({
           x: x,
           y: y,
@@ -29965,162 +29958,142 @@
           pointsAtZ: pointsAtZ
         });
       },
-      mergeNode: function(in1){
-        this.attr('in',in1);
+      mergeNode: function mergeNode(in1) {
+        this.attr('in', in1);
       }
-    }
-
-    // Create compontent functions
-    ;(['r', 'g', 'b', 'a']).forEach(function(c) {
+    } // Create compontent functions
+    ;
+    ['r', 'g', 'b', 'a'].forEach(function (c) {
       /* create class */
-      childEffects['Func' + c.toUpperCase()] = function(type) {
-        this.attr('type',type);
+      childEffects['Func' + c.toUpperCase()] = function (type) {
+        this.attr('type', type); // take diffent arguments based on the type
 
-        // take diffent arguments based on the type
-        switch(type){
+        switch (type) {
           case 'table':
-            this.attr('tableValues',arguments[1]);
-            break
+            this.attr('tableValues', arguments[1]);
+            break;
+
           case 'linear':
-            this.attr('slope',arguments[1]);
-            this.attr('intercept',arguments[2]);
-            break
+            this.attr('slope', arguments[1]);
+            this.attr('intercept', arguments[2]);
+            break;
+
           case 'gamma':
-            this.attr('amplitude',arguments[1]);
-            this.attr('exponent',arguments[2]);
-            this.attr('offset',arguments[2]);
-            break
+            this.attr('amplitude', arguments[1]);
+            this.attr('exponent', arguments[2]);
+            this.attr('offset', arguments[2]);
+            break;
         }
       };
-    });
+    }); //create effects
 
-    //create effects
-    foreach(effects,function(effect,i){
-
+    foreach(effects, function (effect, i) {
       /* capitalize name */
       var name = i.charAt(0).toUpperCase() + i.slice(1);
       var proto = {};
-
       /* create class */
-      SVG[name + 'Effect'] = SVG.invent({
-        create: function() {
+
+      window.SVG[name + 'Effect'] = window.SVG.invent({
+        create: function create() {
           //call super
-          this.constructor.call(this, SVG.create('fe' + name));
+          this.constructor.call(this, window.SVG.create('fe' + name)); //call constructor for this effect
 
-          //call constructor for this effect
-          effect.apply(this,arguments);
+          effect.apply(this, arguments); //set the result
 
-          //set the result
           this.result(this.attr('id') + 'Out');
         },
-        inherit: SVG.Effect,
+        inherit: window.SVG.Effect,
         extend: proto
       });
-    });
+    }); //create parent effects
 
-    //create parent effects
-    foreach(parentEffects,function(effect,i){
-
+    foreach(parentEffects, function (effect, i) {
       /* capitalize name */
       var name = i.charAt(0).toUpperCase() + i.slice(1);
       var proto = {};
-
       /* create class */
-      SVG[name + 'Effect'] = SVG.invent({
-        create: function() {
+
+      window.SVG[name + 'Effect'] = window.SVG.invent({
+        create: function create() {
           //call super
-          this.constructor.call(this, SVG.create('fe' + name));
+          this.constructor.call(this, window.SVG.create('fe' + name)); //call constructor for this effect
 
-          //call constructor for this effect
-          effect.apply(this,arguments);
+          effect.apply(this, arguments); //set the result
 
-          //set the result
           this.result(this.attr('id') + 'Out');
         },
-        inherit: SVG.ParentEffect,
+        inherit: window.SVG.ParentEffect,
         extend: proto
       });
-    });
+    }); //create child effects
 
-    //create child effects
-    foreach(childEffects,function(effect,i){
-
+    foreach(childEffects, function (effect, i) {
       /* capitalize name */
       var name = i.charAt(0).toUpperCase() + i.slice(1);
       var proto = {};
-
       /* create class */
-      SVG[name] = SVG.invent({
-        create: function() {
-          //call super
-          this.constructor.call(this, SVG.create('fe' + name));
 
-          //call constructor for this effect
-          effect.apply(this,arguments);
+      window.SVG[name] = window.SVG.invent({
+        create: function create() {
+          //call super
+          this.constructor.call(this, window.SVG.create('fe' + name)); //call constructor for this effect
+
+          effect.apply(this, arguments);
         },
-        inherit: SVG.ChildEffect,
+        inherit: window.SVG.ChildEffect,
         extend: proto
       });
-    });
+    }); // Effect-specific extensions
 
-    // Effect-specific extensions
-    SVG.extend(SVG.MergeEffect,{
-      in: function(effect){
-        if(effect instanceof SVG.MergeNode)
-          this.add(effect,0);
-        else
-          this.add(new SVG.MergeNode(effect),0);
-
-        return this
+    window.SVG.extend(window.SVG.MergeEffect, {
+      in: function _in(effect) {
+        if (effect instanceof window.SVG.MergeNode) this.add(effect, 0);else this.add(new window.SVG.MergeNode(effect), 0);
+        return this;
       }
     });
-    SVG.extend(SVG.CompositeEffect,SVG.BlendEffect,SVG.DisplacementMapEffect,{
-      in2: function(effect){
-          return effect == null? this.parent() && this.parent().select('[result="'+this.attr('in2')+'"]').get(0) || this.attr('in2') : this.attr('in2', effect)
+    window.SVG.extend(window.SVG.CompositeEffect, window.SVG.BlendEffect, window.SVG.DisplacementMapEffect, {
+      in2: function in2(effect) {
+        return effect == null ? this.parent() && this.parent().select('[result="' + this.attr('in2') + '"]').get(0) || this.attr('in2') : this.attr('in2', effect);
       }
-    });
+    }); // Presets
 
-    // Presets
-    SVG.filter = {
-      sepiatone:  [ .343, .669, .119, 0, 0
-                  , .249, .626, .130, 0, 0
-                  , .172, .334, .111, 0, 0
-                  , .000, .000, .000, 1, 0 ]
-    };
+    window.SVG.filter = {
+      sepiatone: [.343, .669, .119, 0, 0, .249, .626, .130, 0, 0, .172, .334, .111, 0, 0, .000, .000, .000, 1, 0]
+    }; // Helpers
 
-    // Helpers
     function normaliseMatrix(matrix) {
       /* convert possible array value to string */
-      if (Array.isArray(matrix))
-        matrix = new SVG.Array(matrix);
-
+      if (Array.isArray(matrix)) matrix = new window.SVG.Array(matrix);
       /* ensure there are no leading, tailing or double spaces */
-      return matrix.toString().replace(/^\s+/, '').replace(/\s+$/, '').replace(/\s+/g, ' ')
+
+      return matrix.toString().replace(/^\s+/, '').replace(/\s+$/, '').replace(/\s+/g, ' ');
     }
 
     function listString(list) {
-      if (!Array.isArray(list))
-        return list
+      if (!Array.isArray(list)) return list;
 
-      for (var i = 0, l = list.length, s = []; i < l; i++)
+      for (var i = 0, l = list.length, s = []; i < l; i++) {
         s.push(list[i]);
+      }
 
-      return s.join(' ')
+      return s.join(' ');
     }
 
-    function foreach(){ //loops through mutiple objects
-      var fn = function(){};
-      if(typeof arguments[arguments.length-1] == 'function'){
-        fn = arguments[arguments.length-1];
-        Array.prototype.splice.call(arguments,arguments.length-1,1);
+    function foreach() {
+      //loops through mutiple objects
+      var fn = function fn() {};
+
+      if (typeof arguments[arguments.length - 1] == 'function') {
+        fn = arguments[arguments.length - 1];
+        Array.prototype.splice.call(arguments, arguments.length - 1, 1);
       }
-      for(var k in arguments){
-        for(var i in arguments[k]){
-          fn(arguments[k][i],i,arguments[k]);
+
+      for (var k in arguments) {
+        for (var i in arguments[k]) {
+          fn(arguments[k][i], i, arguments[k]);
         }
       }
     }
-
   }).call(undefined);
 
   (function() {
@@ -32103,11 +32076,6 @@
 
           me.grid = new Grid(me);
           var elgrid = me.grid.drawGrid();
-
-          if (w.config.chart.type !== 'treemap') {
-            me.axes.drawAxis(w.config.chart.type, elgrid);
-          }
-
           me.annotations = new Annotations(me);
           me.annotations.drawImageAnnos();
           me.annotations.drawTextAnnos();
@@ -32161,6 +32129,10 @@
           if (w.config.annotations.position === 'front') {
             w.globals.dom.Paper.add(w.globals.dom.elAnnotations);
             me.annotations.drawAxesAnnotations();
+          }
+
+          if (w.config.chart.type !== 'treemap') {
+            me.axes.drawAxis(w.config.chart.type, elgrid);
           }
 
           if (!w.globals.noData) {
